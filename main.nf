@@ -104,6 +104,7 @@ Alignment Parameters
 //*************************************************
 
 include { bowtie2_index; bowtie2 } from "$baseDir/modules/bowtie2.nf"
+include { breseq } from "$baseDir/modules/breseq.nf"
 // When using the same process several times like here with  fastqc you must provide a specific name
 // by call using this structure "fastqc as fastqc_raw" where the process fastqc will be available here with the name fastqc_raw
 include { fastqc as fastqc_raw; fastqc as fastqc_ali } from "$baseDir/modules/fastqc.nf"
@@ -194,18 +195,19 @@ workflow ALIGN {
         genome
 
     main:
-
-        // ------------------- QC -----------------
-        fastqc_raw(reads)
         
         // ------------------- BOWTIE2 -----------------
         bowtie2_index(genome) // index
         bowtie2(reads, bowtie2_index.out.collect(), genome) // align
 
+        // ------------------- BRESEQ -----------------
+        breseq(bowtie2.out.tuple_sample_fastq, genome)
+
+
         // ------------------- SAMTOOLS -----------------
-        samtools_sam2bam(bowtie2.out.tuple_sample_sam)
+        //samtools_sam2bam(bowtie2.out.tuple_sample_sam)
         // sort
-        samtools_sort(samtools_sam2bam.out.tuple_sample_bam)
+        //samtools_sort(samtools_sam2bam.out.tuple_sample_bam)
         
 }
 
