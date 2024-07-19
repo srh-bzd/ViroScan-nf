@@ -174,7 +174,7 @@ Test data are included in the Viroscan repository in the `test` folder.
 A typical command to run a test on single end data will look like that:
 
 ```
-nextflow run -profile local,docker main.nf --genome test/genome.fa --reads test --single_end true
+nextflow run -profile local,docker,test main.nf
 ```
 
 On success you should get a message looking like this:

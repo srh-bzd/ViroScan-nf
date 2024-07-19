@@ -244,7 +244,7 @@ def header(){
     ${c_blue} |   | ${c_white}|  | \\ `'   /${c_red}|  (_.\\.' /${c_reset}
     ${c_blue} |   | ${c_white}|  |  \\    / ${c_red}|       .'${c_reset}
     ${c_blue} '---' ${c_white}''-'   `'-'  ${c_red}'-----'`${c_reset}
-    ${c_purple} ViroScan - Filter-out Filter-in in Nextflow - v${workflow.manifest.version}${c_reset}
+    ${c_purple} ${workflow.manifest.name} - Filter-out Filter-in in Nextflow - v${workflow.manifest.version}${c_reset}
     -${c_dim}--------------------------------------------------${c_reset}-
     """.stripIndent()
 }
@@ -254,10 +254,10 @@ def header(){
 //*************************************************
 
 workflow.onComplete {
-    log.info ( workflow.success ? "\nViroScan pipeline complete!\n" : "Oops .. something went wrong\n" )
+    log.info ( workflow.success ? "\n${workflow.manifest.name} pipeline complete!\n" : "Oops .. something went wrong\n" )
 
     log.info """
-    BiTeN Pipeline execution summary
+    ${workflow.manifest.name} Pipeline execution summary
     --------------------------------------
     Completed at : ${workflow.complete}
     UUID         : ${workflow.sessionId}
@@ -266,5 +266,23 @@ workflow.onComplete {
     Exit Status  : ${workflow.exitStatus}
     Error report : ${workflow.errorReport ?: '-'}
     """
+
+    
+    if (workflow.success) {
+        log.info """
+        Results are available in the folder: ${params.outdir}
+        """
+        // remove folder work
+        if (params.remove_workdir) {
+            def work = Paths.get("${workflow.projectDir}/work")
+            if (Files.exists(work)) {
+                log.info "        Removing ${work} folder"
+                Files.walk(work)
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete)
+            }
+        }
+    }
 }
 
