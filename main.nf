@@ -30,7 +30,7 @@ params.stranded = false // Boolean to see if we have a single or stranded data s
 
 // Extra parameter provided by the user to the tool
 params.bowtie2_options = ''
-
+params.breseq_options = ''
 
 //*************************************************
 // STEP 1 - LOG INFO
@@ -74,7 +74,7 @@ log.info """
 General Parameters
     genome                     : ${params.genome}
     reads                      : ${params.reads}
-    reads pattern              : ${params.pattern_reads}
+    paired_reads_pattern       : ${params.paired_reads_pattern}
     single_end                 : ${params.single_end}
     outdir                     : ${params.outdir}
   
@@ -203,10 +203,10 @@ workflow ALIGN {
         
         // ------------------- BOWTIE2 -----------------
         bowtie2_index(genome) // index
-        bowtie2(reads, bowtie2_index.out.collect(), genome) // align
+        bowtie2(reads, bowtie2_index.out.collect(), genome.collect()) // align
 
         // ------------------- BRESEQ -----------------
-        breseq(bowtie2.out.tuple_sample_fastq, genome)
+        breseq(bowtie2.out.tuple_sample_fastq, genome.collect())
 
 
         // ------------------- SAMTOOLS -----------------

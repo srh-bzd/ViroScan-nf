@@ -1,5 +1,8 @@
+results
+work
 *.log
 *.log.*
 *.nextflow
 *.nextflow.*
 pipeline_report/*
+pipeline_report/execution*

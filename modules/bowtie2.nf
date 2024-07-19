@@ -35,7 +35,7 @@ process bowtie2 {
         path genome
 
     output:
-        tuple val(sample), path ("*unmatched.fq.gz"), emit: tuple_sample_fastq
+        tuple val(sample), path ("*_unmatched*fq.gz"), emit: tuple_sample_fastq
         path "*bowtie2.log",  emit: bowtie2_summary
 
     script:
@@ -55,7 +55,7 @@ process bowtie2 {
         bowtie2 ${params.bowtie2_options} \\
             -p ${task.cpus} \\
             -x ${genome.baseName} \\
-            -S ${reads.baseName}_bowtie2.sam \\
+            -S ${sample}_bowtie2.sam \\
             -1 ${reads[0]} -2 ${reads[1]} \\
             --al-gz ${sample}_matched.unpaired.fq.gz --un-gz ${sample}_unmatched.unpaired.fq.gz \\
             --al-conc-gz ${sample}_matched_R%.paired.fq.gz --un-conc-gz ${sample}_unmatched_R%.paired.fq.gz 2> ${reads[0].baseName}_bowtie2.log
