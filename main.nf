@@ -17,10 +17,11 @@ import java.nio.file.*
 
 // Input/output params
 params.help = false
-params.reads_folder = "/path/to/reads/foder/"
+params.reads = "/path/to/reads/foder/"
 params.genome = "/path/to/genome.fa"
 params.outdir = "results"
-params.pattern_reads = "*.fastq.gz" // Extension used to detect reads in folder
+params.reads_extension = ".fastq.gz" // Extension used to detect reads in folder
+params.paired_reads_pattern = "{1,2}"
 
 
 // Read feature params
@@ -36,23 +37,7 @@ params.bowtie2_options = ''
 //*************************************************
 
 // ------------ First an header printed in all cases -----------------
-log.info """
-IRD
-.-./`) .-------.     ______
-\\ .-.')|  _ _   \\   |    _ `''.
-/ `-' \\| ( ' )  |   | _ | ) _  \\
- `-'`\"`|(_ o _) /   |( ''_'  ) |
- .---. | (_,_).' __ | . (_) `. |
- |   | |  |\\ \\  |  ||(_    ._) '
- |   | |  | \\ `'   /|  (_.\\.' /
- |   | |  |  \\    / |       .'
- '---' ''-'   `'-'  '-----'`
-
-
-BiTeN - Bioinformatics Template in Nextflow
-BiTeN is a template for developing pipeline in Nextflow
-============================================================
-"""
+log.info header()
 
 // ------------ A help printed only when --help is called -----------------
 
@@ -127,25 +112,45 @@ else { exit 1, "No executer selected: -profile docker/singularity"}
 
 // check input (file or folder?)
 def list_files = []
-def pattern_reads =  "${params.pattern_reads}"
-File input_reads = new File(params.reads)
+def pattern_reads
+def fromFilePairs_input
+def path_reads = params.reads 
+
+// in case of folder provided, add a trailing slash if missing
+File input_reads = new File(path_reads)
 if(input_reads.exists()){
     if ( input_reads.isDirectory()) {
-       
+        if (! input_reads.name.endsWith("/")) {
+            path_reads = "${path_reads}" + "/"
+        }
+    }
+}
+
+if (params.single_end) {
+    pattern_reads = "${params.reads_extension}"
+    fromFilePairs_input = "${path_reads}*${params.reads_extension}"
+} else {
+    pattern_reads = "${params.paired_reads_pattern}${params.reads_extension}"
+    fromFilePairs_input = "${path_reads}*${params.paired_reads_pattern}${params.reads_extension}"
+}
+
+if(input_reads.exists()){
+    if ( input_reads.isDirectory()) {
+        log.info "The input ${path_reads} is a folder!\n"
         input_reads.eachFileRecurse(FILES){
-            if (it.name =~ ~/\\*.fastq.gz/){
+            if (it.name =~ ~/${pattern_reads}/){
                 list_files.add(it)
             }
         }
         samples_number = list_files.size()
-        log.info "The ${params.reads} input folder contains ${samples_number} file(s) with pattern ${params.pattern_reads}, let's analyze that..."
-        pattern_reads="${input_reads}/${params.pattern_reads}"
+        log.info "${samples_number} files in ${path_reads} with pattern ${pattern_reads}"
     }
     else {
-        exit 1, "The input ${params.reads} is a file! A folder is expected\n"
+        log.info "The input ${path_reads} is a file!\n"
+        pattern_reads = "${path_reads}"
     }
 } else {
-    exit 1, "The input ${params.reads} does not exists!\n"
+    exit 1, "The input ${path_reads} does not exists!\n"
 }
 
 //*************************************************
@@ -168,8 +173,8 @@ if(input_reads.exists()){
 workflow {
 
     main:
-        Channel.fromFilePairs("${pattern_reads}", size: params.single_end ? 1 : 2, checkIfExists: true)
-            .ifEmpty { exit 1, "Cannot find reads matching ${params.reads}!\n" }
+        Channel.fromFilePairs(fromFilePairs_input, size: params.single_end ? 1 : 2, checkIfExists: true)
+            .ifEmpty { exit 1, "Cannot find reads matching ${path_reads}!\n" }
             .set {reads}
         Channel.fromPath(params.genome, checkIfExists: true)
             .ifEmpty { exit 1, "Cannot find genome matching ${params.genome}!\n" }
@@ -213,11 +218,43 @@ workflow ALIGN {
 
 
 //*************************************************
+// extra functions
+//*************************************************
+def header(){
+    // Log colors ANSI codes
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_dim = params.monochrome_logs ? '' : "\033[2m";
+    c_black = params.monochrome_logs ? '' : "\033[0;30m";
+    c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+    c_blue = params.monochrome_logs ? '' : "\033[0;34m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+    c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
+    c_white = params.monochrome_logs ? '' : "\033[0;37m";
+    c_red = params.monochrome_logs ? '' : "\033[0;31m";
+
+    return """
+    -${c_dim}--------------------------------------------------${c_reset}-
+    ${c_blue}.-./`) ${c_white}.-------.    ${c_red} ______${c_reset}
+    ${c_blue}\\ .-.')${c_white}|  _ _   \\  ${c_red} |    _ `''.${c_reset}     French National   
+    ${c_blue}/ `-' \\${c_white}| ( ' )  |  ${c_red} | _ | ) _  \\${c_reset}    
+    ${c_blue} `-'`\"`${c_white}|(_ o _) /  ${c_red} |( ''_'  ) |${c_reset}    Research Institute for    
+    ${c_blue} .---. ${c_white}| (_,_).' __ ${c_red}| . (_) `. |${c_reset}
+    ${c_blue} |   | ${c_white}|  |\\ \\  |  |${c_red}|(_    ._) '${c_reset}    Sustainable Development
+    ${c_blue} |   | ${c_white}|  | \\ `'   /${c_red}|  (_.\\.' /${c_reset}
+    ${c_blue} |   | ${c_white}|  |  \\    / ${c_red}|       .'${c_reset}
+    ${c_blue} '---' ${c_white}''-'   `'-'  ${c_red}'-----'`${c_reset}
+    ${c_purple} ViroScan - Filter-out Filter-in in Nextflow - v${workflow.manifest.version}${c_reset}
+    -${c_dim}--------------------------------------------------${c_reset}-
+    """.stripIndent()
+}
+
+//*************************************************
 // Information to report at the end of the pipeline
 //*************************************************
 
 workflow.onComplete {
-    log.info ( workflow.success ? "\nBiTeN pipeline complete!\n" : "Oops .. something went wrong\n" )
+    log.info ( workflow.success ? "\nViroScan pipeline complete!\n" : "Oops .. something went wrong\n" )
 
     log.info """
     BiTeN Pipeline execution summary
@@ -229,16 +266,5 @@ workflow.onComplete {
     Exit Status  : ${workflow.exitStatus}
     Error report : ${workflow.errorReport ?: '-'}
     """
-
-    // Move pipeline execution information files into the result folder. 
-    // It is safe to keep a copy in the result to keep track to what has been done to generate the results.
-    int num = 0;
-    String save = "${params.pipeline_report}"
-    File file = new File("${params.outdir}", save);
-    while(file.exists()) {
-        save = "${params.pipeline_report}" + "_" + (num++) ;
-        file = new File("${params.outdir}", save);
-    }
-    Files.move(new File("${params.pipeline_report}").toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 }
 

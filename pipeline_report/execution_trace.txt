@@ -1,5 +1,1 @@
 task_id	hash	native_id	name	status	exit	submit	duration	realtime	%cpu	peak_rss	peak_vmem	rchar	wchar
-2	4d/e180cf	29332	ALIGN:fastqc_raw (R1-B_S14_L001.R2)	COMPLETED	0	2024-04-16 15:32:12.735	8s	6s	124.8%	219.3 MB	3.8 GB	12.9 MB	1.9 MB
-4	6d/6aa50c	29339	ALIGN:fastqc_raw (R1-B_S21_L001.R2)	COMPLETED	0	2024-04-16 15:32:12.768	8.2s	6s	138.8%	237.7 MB	3.8 GB	12.4 MB	1.9 MB
-3	d9/f566bb	30327	ALIGN:fastqc_raw (R1-B_S21_L001.R1)	COMPLETED	0	2024-04-16 15:32:20.851	8.1s	7s	111.2%	213.6 MB	3.8 GB	12.3 MB	1.9 MB
-1	21/198886	30343	ALIGN:fastqc_raw (R1-B_S14_L001.R1)	COMPLETED	0	2024-04-16 15:32:20.964	8.1s	7s	117.1%	253.8 MB	3.8 GB	12.7 MB	1.9 MB
