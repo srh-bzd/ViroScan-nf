@@ -1,0 +1,5 @@
+*.log
+*.log.*
+*.nextflow
+*.nextflow.*
+pipeline_report/*
