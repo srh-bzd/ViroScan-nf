@@ -5,10 +5,8 @@ ViroScan is an automated pipeline that eliminate short-reads not of interest acc
 ## Table of Contents
 
    * [Foreword](#foreword)
-     * [Project layout](#project-layout)
-     * [Helping to develop](#helping-to-develop)
    * [Installation](#installation)
-      * [Viroscan](#viroscan)
+      * [ViroScan](#viroscan)
       * [Nextflow](#nextflow)
       * [Container platform](#container-platform)
         * [Docker](#docker)
@@ -59,7 +57,7 @@ The prerequisites to run the pipeline are:
   * [Nextflow](https://www.nextflow.io/)  >= 22.04.0
   * [Docker](https://www.docker.com) or [Singularity](https://sylabs.io/singularity/) 
 
-### Viroscan 
+### ViroScan 
 
 ```bash
 # clone the workflow repository
