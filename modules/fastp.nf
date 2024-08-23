@@ -33,7 +33,7 @@ process fastp {
         fastp -i ${reads[0]} -I ${reads[1]} \\
               -w ${task.cpus} \\
               -o ${sample}_R1.trimmed.fq.gz \\
-              -O ${sample}_R1.trimmed.fq.gz \\
+              -O ${sample}_R2.trimmed.fq.gz \\
               --cut_right \\
               -j ${sample}_fastp.json
     """

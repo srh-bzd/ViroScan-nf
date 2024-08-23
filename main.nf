@@ -28,6 +28,9 @@ params.paired_reads_pattern = "{1,2}"
 params.single_end = true // Boolean to see if we have a single end or paired end data set
 params.stranded = false // Boolean to see if we have a single or stranded data set
 
+// Step params
+params.run_fastp = true // Boolean to decide to launch trimming
+
 // Extra parameter provided by the user to the tool
 params.bowtie2_options = ''
 params.breseq_options = ''
@@ -203,11 +206,17 @@ workflow ALIGN {
     main:
 
         // ------------------- FASTP -----------------
-        fastp(reads) // trimming
-        
+        if (params.run_fastp){
+            fastp(reads) // trimming
+            fastp.out[0].set{tuple_sample_fastq_after_trimming}
+        } else {
+            tuple_sample_fastq_after_trimming = reads
+        }
+    
+
         // ------------------- BOWTIE2 -----------------
         bowtie2_index(genome) // index
-        bowtie2(fastp.out.tuple_sample_fastq_trimmed, bowtie2_index.out.collect(), genome.collect()) // align
+        bowtie2(tuple_sample_fastq_after_trimming, bowtie2_index.out.collect(), genome.collect()) // align
 
         // ------------------- BRESEQ -----------------
         breseq(bowtie2.out.tuple_sample_fastq, genome.collect())

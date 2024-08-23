@@ -37,6 +37,7 @@ process bowtie2 {
     output:
         tuple val(sample), path ("*_unmatched*fq.gz"), emit: tuple_sample_fastq
         path "*bowtie2.log",  emit: bowtie2_summary
+        path("*_matched*fq.gz")
 
     script:
 
