@@ -1,9 +1,6 @@
-<h2>Viroscan</h2>  
+<h2>ViroScan</h2>  
 
-
-explanation here 
-
-Nextflow is a free, open source software project that facilitates the execution of a computational workflow consisting of a series of interconnected steps/tasks. Utilizing Nextflow can take various forms. This repository offers a specific example illustrating how a bioinformatician can organize their code to be executed using Nextflow.
+ViroScan is an automated pipeline that eliminate short-reads not of interest according to a reference (filter-out) and identify viruses present (filter-in).
 
 ## Table of Contents
 
@@ -26,68 +23,39 @@ Nextflow is a free, open source software project that facilitates the execution 
 
 ## Foreword
 
-The pipeline and the whole repository (readme/Contributing/etc) can be use as template for nextflow pipeline projects.
-Comment in pipeline's code help the user to better understand the different usages. 
-
-This pipeline template follow the following steps:
-
-- handling parameters, file input and help (Deal with gz and not gz file, deal with paired and unpaired input reads, etc.)
-- QC
-- Alignment
-- file conversion (sam2bam)
-- file sorting (samtools_sort)
-
-### Project layout
-    
-    Viroscan/
-    ├── README.md               # Documentation that gives users a detailed description of a project and with guidelines on how to use it.
-    ├── LICENSE                 # Lience of your projet. Licenses are important for open-source projects because they set the legal terms and conditions for using, distributing, and modifying the software
-    ├── CONTRIBUTING.md         # Provides potential project contributors with a short guide to how they can help with your project 
-    ├──  img                    # Folder containing images used by the README
-    |
-    |         // FROM HERE IT IS RELATED TO THE NEXTFLOW PIPELINE
-    |
-    ├── main.nf                # The nextflow main executable file use to run your pipeline. It contains the logic of your pipeline
-    ├── modules/               # Modules folder contains components that can be included in workflows. Think as functions in programming languages. Module were introduced in DSL2. See https://www.nextflow.io/docs/latest/module.html It is encouraged to have a module file by tool.
-    │   ├── bowtie2.nf         # A module file containings processes (the basic processing primitive to execute a user script see https://www.nextflow.io/docs/latest/process.html#processes) related to the bowtie2 tool.
-    │   ├── fastqc.nf          # A module file containings processes related to the fastqc tool.
-    │   ├── samtools.nf        # A module file containings processes related to the samtools tool.
-    │   └── template.nf        # A template module file.
-    ├── subworkflows/          # Subworkflows folder contains workflow components that can be included in other workflows, typically used by the main workflow in the main.nf 
-    ├── nextflow.config        # Configuration file. Nextflow has multiple way to handle config ((see here)[https://www.nextflow.io/docs/latest/config.html#configuration-file]). We can define it this file, parameters, profiles, etc.
-    ├── ressources/            # Contains configuration files that define the differents ressources i.e. computing and tools
-    │   ├── computing/         # Contains configuration files that define the computing ressources that will be loaded via profiles
-    │   │   ├── hpc.config     # A hpc configuration that define computing ressource on HPC (CPU, TimeOut, RAM per process/label and other information like parallelisation and scheduler)
-    │   │   └── local.config   # A local configuration that define computing ressource on local machine (CPU, TimeOut, RAM per process/label).
-    │   └── softwares.config   # A software configuration that define where Nextflow have to fetch the container of each tool.
-    └── test                   # Folder containing a test data set 
-        ├── reads.fastq.gz
-        └── genome.fa
+ViroScan is an automated pipeline that eliminate reads not of interest according to a reference (filter-out) and identify viruses present (filter-in).
 
 
-### Helping to develop
+```mermaid
+---
+title: Workflow of ViroScan
+---
+flowchart TD
+    A([Input reads to analyse]) --> B{Perform a \nfilter out ?};
+    B -- No --> F{Perform a \nfilter in};
+    B -- Yes --> C[Align against reference];
+    D([Indexed reference]) -.-> C;
+    C --> K([Mapped reads]);
+    C --> E([Unmapped reads]);
+    E --> F;
+    F --> G[Align against viruses];
+    H[(Database \nof viruses)] -.-> G;
+    G --> I([Mapped reads\n]);
+    G --> L([Metrics]);
+    G --> M([Tool analysis results]);
+    subgraph identifier["\n\n\nOutput"]
+    I;
+    L;
+    M; 
+    end
+```
 
-**Documentation**
-
- * [Nextflow Documentation](https://www.nextflow.io/docs/latest/index.html) The official nextflow documentation very well written. Do not hesitate to extensively use the search bar!
- * [Basic pipeline example from nextflow.io](https://www.nextflow.io/example1.html) Do not hesitate to look at other examples
- * [Nextflow Training Fundamentals](https://training.nextflow.io/basic_training/) The offical training module from nextflow.io to learn the fundamentals.
- * [Nextflow Training Advanded](https://training.nextflow.io/advanced/) The offical training module from nextflow.io for advanced users.
- * [Nextflow Cheat Sheet](https://github.com/danrlu/nextflow_cheatsheet/blob/main/nextflow_cheatsheet.pdf) A nice nextflow cheat sheet made by @dabrlu .
- * [Software Carpentry Nextflow training](https://carpentries-incubator.github.io/workflows-nextflow/index.html). High quality course made by the [Software Carpentry](https://software-carpentry.org).
- * [Bioinformatics Workshop on Tools for Reproducible Research - Nextflow](https://southgreenplatform.github.io/training_reproducible_research/pages/nextflow/nextflow-1-introduction/) A course based on [NBIS material](https://github.com/NBISweden/workshop-reproducible-research) to learn Nextflow basics.
-
-**Community**
-
- * [Nextflow Slack](https://www.nextflow.io/slack-invite.html)
- * [Nf-core](https://nf-co.re/) A community effort to collect a curated set of analysis pipelines built using Nextflow.
- * [Seqera Community](https://community.seqera.io/)
 
 ## Installation
 
 The prerequisites to run the pipeline are:  
 
-  * The Viroscan repository
+  * The ViroScan repository
   * [Nextflow](https://www.nextflow.io/)  >= 22.04.0
   * [Docker](https://www.docker.com) or [Singularity](https://sylabs.io/singularity/) 
 
@@ -95,10 +63,10 @@ The prerequisites to run the pipeline are:
 
 ```bash
 # clone the workflow repository
-git clone https://github.com/srh-bzd/Viroscan-nf.git
+git clone https://github.com/srh-bzd/ViroScan-nf.git
 
 # Move in it
-cd Viroscan
+cd ViroScan-nf
 ```
 
 ### Nextflow 
@@ -169,7 +137,7 @@ nextflow run main.nf -profile docker,slurm <rest of paramaters>
 
 ## Test the workflow
 
-Test data are included in the Viroscan repository in the `test` folder.
+Test data are included in the ViroScan repository in the `test` folder.
 
 A typical command to run a test on single end data will look like that:
 
@@ -203,18 +171,18 @@ On success you should get a message looking like this:
 
 ## Contributing
 
-We welcome contributions from the community! See our [Contributing guidelines](https://github.com/srh-bzd/Viroscan-nf/blob/main/CONTRIBUTING.md)
+We welcome contributions from the community! See our [Contributing guidelines](https://github.com/srh-bzd/ViroScan-nf/blob/main/CONTRIBUTING.md)
 
 ## Report bugs and issues
 
-Found a bug or have a question? Please open an [issue](https://github.com/srh-bzd/Viroscan-nf/issues).
+Found a bug or have a question? Please open an [issue](https://github.com/srh-bzd/ViroScan-nf/issues).
 
 ## How to cite?
 
-Define how to cite my work
+No yet, but maybe later !
 
 # Acknowledgement
 
 Jacques Dainat (@Juke34)
-Development based on the Viroscan template (https://github.com/Juke34/BiTeN) made by Dainat J. <here put commit version> 
+Development based on the BiTeN template (https://github.com/Juke34/BiTeN) made by Dainat J.
 
