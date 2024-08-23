@@ -167,6 +167,10 @@ On success you should get a message looking like this:
 |  --genome        | path to the genome file in fasta format. |
 | --bowtie2_options | Parameter to tune the bowtie2 aligner behaviour. |
 
+## Uninstall
+
+To be completed
+
 ## Contributing
 
 We welcome contributions from the community! See our [Contributing guidelines](https://github.com/srh-bzd/ViroScan-nf/blob/main/CONTRIBUTING.md)
