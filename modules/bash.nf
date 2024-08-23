@@ -9,19 +9,23 @@ process concat_tables {
     publishDir "${params.outdir}/metrics", pattern: "*", mode: 'copy' // I want all sub-directories
 
     input:
-        val(metric_tables)
+        path(metric_tables)
 
     output:
         path("refs.percents.txt"), emit: refs_percent_final_table
-        path("filterin.counts.txt"),  emit: filterin_count_final_table
 
-    shell:
+    script:
 
     def tables_list = []
     tables_list = metric_tables
-    listBash = tables_list.join(" ");
+    listBashTable = tables_list.join(" ");
+    log.info"""
+    $listBashTable
     """
-    echo $listBash
+    """
+    for i in $listBashTable;do
+        cat \$i >> refs.percents.txt
+    done
     """
 
 }

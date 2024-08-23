@@ -227,7 +227,7 @@ workflow ALIGN {
         // ------------------- METRICS -----------------
         write_output_tables(breseq.out.tuple_breseq_sample_json)
         //concat_tables(write_output_tables.out.metric_tables.toList())
-        concat_tables(write_output_tables.out.metric_tables.toList().view())
+        concat_tables(write_output_tables.out.metric_percents.collect())
         // breseq.out.tuple_breseq_sample_json.toList().map{[it]}.view()
 
         // ------------------- SAMTOOLS -----------------

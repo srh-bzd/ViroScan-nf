@@ -13,7 +13,8 @@ process write_output_tables {
         tuple val(sample), path(breseq_json)
 
     output:
-        tuple path("*refs.percents.txt"), path("*filterin.counts.txt"), emit: metric_tables
+        path("*refs.percents.txt"), emit: metric_percents
+        path("*filterin.counts.txt"), emit: metric_counts
 
     script:
 
