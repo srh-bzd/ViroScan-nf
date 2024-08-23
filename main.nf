@@ -34,6 +34,7 @@ params.run_fastp = true // Boolean to decide to launch trimming
 // Extra parameter provided by the user to the tool
 params.bowtie2_options = ''
 params.breseq_options = ''
+params.table_threshold = 5 // This is a percent
 
 //*************************************************
 // STEP 1 - LOG INFO
@@ -94,6 +95,8 @@ Alignment Parameters
 include { bowtie2_index; bowtie2 } from "$baseDir/modules/bowtie2.nf"
 include { breseq } from "$baseDir/modules/breseq.nf"
 include { fastp } from "$baseDir/modules/fastp.nf"
+include { write_output_tables } from "$baseDir/modules/python.nf"
+include { concat_tables } from "$baseDir/modules/bash.nf"
 // When using the same process several times like here with  fastqc you must provide a specific name
 // by call using this structure "fastqc as fastqc_raw" where the process fastqc will be available here with the name fastqc_raw
 include { fastqc as fastqc_raw; fastqc as fastqc_ali } from "$baseDir/modules/fastqc.nf"
@@ -221,6 +224,11 @@ workflow ALIGN {
         // ------------------- BRESEQ -----------------
         breseq(bowtie2.out.tuple_sample_fastq, genome.collect())
 
+        // ------------------- METRICS -----------------
+        write_output_tables(breseq.out.tuple_breseq_sample_json)
+        //concat_tables(write_output_tables.out.metric_tables.toList())
+        concat_tables(write_output_tables.out.metric_tables.toList().view())
+        // breseq.out.tuple_breseq_sample_json.toList().map{[it]}.view()
 
         // ------------------- SAMTOOLS -----------------
         //samtools_sam2bam(bowtie2.out.tuple_sample_sam)

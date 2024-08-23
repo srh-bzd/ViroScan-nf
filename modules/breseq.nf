@@ -17,6 +17,7 @@ process breseq {
 
     output:
         path ("*")
+        tuple val(sample), path("${sample}/output/summary.json"), emit: tuple_breseq_sample_json
 
     script:
 
