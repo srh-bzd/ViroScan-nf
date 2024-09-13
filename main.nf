@@ -225,9 +225,11 @@ workflow ALIGN {
         breseq(bowtie2.out.tuple_sample_fastq, genome.collect())
 
         // ------------------- METRICS -----------------
+        // create the metrics tables
         write_output_tables(breseq.out.tuple_breseq_sample_json)
-        //concat_tables(write_output_tables.out.metric_tables.toList())
-        concat_tables1(write_output_tables.out.metric_percents.collect(), "metric_percent_all")
+        // concat the metric_percent tables
+        concat_tables1(write_output_tables.out.metric_percents.collect(), "metric_percents_all")
+        // concat the metric_counts tables
         concat_tables2(write_output_tables.out.metric_counts.collect(), "metric_counts_all")
         // breseq.out.tuple_breseq_sample_json.toList().map{[it]}.view()
 
