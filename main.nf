@@ -18,7 +18,8 @@ import java.nio.file.*
 // Input/output params
 params.help = false
 params.reads = "/path/to/reads/foder/"
-params.genome = "/path/to/genome.fa"
+params.genome_in = "/path/to/genome_in"
+params.genome_out = "/path/to/genome_out"
 params.outdir = "results"
 params.reads_extension = ".fastq.gz" // Extension used to detect reads in folder
 params.paired_reads_pattern = "{1,2}"
@@ -53,19 +54,20 @@ def helpMSG() {
     ********* HELP *********
 
         Usage example:
-    nextflow run -profile docker main.nf --genome test/hpv16.fa --reads test
+    nextflow run -profile docker main.nf --genome_in test/hpv16.fa --genome_out test/hpv16.fa --reads test
 
     --help                      prints the help section
 
         Input Reads:
-    --reads                     path to the directory containing the reads 
-    --pattern_reads             pattern to match the read files. In the case of single end data it would looks like: "*.fastq.gz"
-                                                                 In the case of paired end data it would looks like: "*_{R1,R2}_001.fastq.gz" or "*_{1,2}.fastq.gz"        
+    --reads                     Path to the directory containing the reads 
+    --pattern_reads             Pattern to match the read files. In the case of single end data it would looks like: "*.fastq.gz"
+                                In the case of paired end data it would looks like: "*_{R1,R2}_001.fastq.gz" or "*_{1,2}.fastq.gz"        
     --single_end                Boolean to inform if we have a single end or paired end data. (default: ${params.single_end})
     --stranded                  Boolean to inform if we have a single or stranded data. (default: ${params.stranded})
 
         Input Genome:
-    --genome                    path to the genome file in fasta format
+    --genome_in                 path to the genome file in fasta format or genebank used for filter-in with breseq
+    --genome_out                path to the genome file in fasta format used for filter-out with bowtie2
 
         Alignment
     --bowtie2_options           Parameter to tune the bowtie2 aligner behaviour.  (default: ${params.bowtie2_options})
@@ -76,7 +78,8 @@ def helpMSG() {
 
 log.info """
 General Parameters
-    genome                     : ${params.genome}
+    genome_in                  : ${params.genome_in}
+    genome_out                 : ${params.genome_out}
     reads                      : ${params.reads}
     paired_reads_pattern       : ${params.paired_reads_pattern}
     single_end                 : ${params.single_end}
@@ -97,8 +100,6 @@ include { breseq } from "$baseDir/modules/breseq.nf"
 include { fastp } from "$baseDir/modules/fastp.nf"
 include { write_output_tables } from "$baseDir/modules/python.nf"
 include { concat_tables as concat_tables1; concat_tables as concat_tables2} from "$baseDir/modules/bash.nf"
-// When using the same process several times like here with  fastqc you must provide a specific name
-// by call using this structure "fastqc as fastqc_raw" where the process fastqc will be available here with the name fastqc_raw
 include { fastqc as fastqc_raw; fastqc as fastqc_ali } from "$baseDir/modules/fastqc.nf"
 include { samtools_sam2bam; samtools_sort  } from "$baseDir/modules/samtools.nf"
 
@@ -163,51 +164,32 @@ if(input_reads.exists()){
 //*************************************************
 // Main Workflow - 
 //*************************************************
-// It can connect several sub workflows
-// Here we have only one called ALIGN. If we do not want any subworkflow at all you will have to remove the "ALIGN(reads,genome)" line
-// and then move all the code from ALIGN here excepted:
-//workflow ALIGN {
-//
-//    take:
-//        reads
-//        genome
-//
-//    main:
-//}
-//*************************************************
-
-
 workflow {
 
     main:
         Channel.fromFilePairs(fromFilePairs_input, size: params.single_end ? 1 : 2, checkIfExists: true)
             .ifEmpty { exit 1, "Cannot find reads matching ${path_reads}!\n" }
             .set {reads}
-        Channel.fromPath(params.genome, checkIfExists: true)
-            .ifEmpty { exit 1, "Cannot find genome matching ${params.genome}!\n" }
-            .set {genome}
-        ALIGN(reads,genome)
+        Channel.fromPath(params.genome_in, checkIfExists: true)
+            .ifEmpty { exit 1, "Cannot find genome_in matching ${params.genome_in}!\n" }
+            .set {genome_in}
+        Channel.fromPath(params.genome_out, checkIfExists: true)
+            .ifEmpty { exit 1, "Cannot find genome_out matching ${params.genome_out}!\n" }
+            .set {genome_out}
+        OUTIN(reads, genome_in, genome_out)
 }
 
 //*************************************************
 // Sub-Workflow
 //*************************************************
-// Sub-Workflow align 
-// For clarity you may decide to move this part into a folder name subworflows in a file called e.g. align.nf
-// To make it accessible from here you will have to import the subworklow as follow:
-// include { ALIGN } from "${baseDir}/subworkflows/ALIGN.nf"
-// A subworkflow behaves like a process, in the case your main workflow needs to get access to a result 
-// emited by the sub-subworklow, you must use the emit: statement at the end of the sub-subworklow.
-//*************************************************
-
-workflow ALIGN {
+workflow OUTIN {
 
     take:
         reads
-        genome
+        genome_in
+        genome_out
 
     main:
-
         // ------------------- FASTP -----------------
         if (params.run_fastp){
             fastp(reads) // trimming
@@ -217,14 +199,14 @@ workflow ALIGN {
         }
     
 
-        // ------------------- BOWTIE2 -----------------
-        bowtie2_index(genome) // index
+        // ------------------- FILTER-IN - BOWTIE2  -----------------
+        bowtie2_index(genome_out) // index
         // Filter out - we remove the reads that align to the reference genomes
-        bowtie2(tuple_sample_fastq_after_trimming, bowtie2_index.out.collect(), genome.collect()) // align
+        bowtie2(tuple_sample_fastq_after_trimming, bowtie2_index.out.collect(), genome_out.collect()) // align
 
-        // ------------------- BRESEQ -----------------
+        // ------------------- FILTER-OUT - BRESEQ -----------------
         // Filter in - we align and keep the reads that align to the reference genomes
-        breseq(bowtie2.out.tuple_sample_fastq, genome.collect())
+         breseq(bowtie2.out.tuple_sample_fastq, genome_in.collect())
 
         // ------------------- METRICS -----------------
         // create the metrics tables
@@ -232,16 +214,8 @@ workflow ALIGN {
         // concat the metric_percent tables
         concat_tables1(write_output_tables.out.metric_percents.collect(), "metric_percents_all")
         // concat the metric_counts tables
-        concat_tables2(write_output_tables.out.metric_counts.collect(), "metric_counts_all")
-        // breseq.out.tuple_breseq_sample_json.toList().map{[it]}.view()
-
-        // ------------------- SAMTOOLS -----------------
-        //samtools_sam2bam(bowtie2.out.tuple_sample_sam)
-        // sort
-        //samtools_sort(samtools_sam2bam.out.tuple_sample_bam)
-        
+        concat_tables2(write_output_tables.out.metric_counts.collect(), "metric_counts_all")       
 }
-
 
 //*************************************************
 // extra functions
