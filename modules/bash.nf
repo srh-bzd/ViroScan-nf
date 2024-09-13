@@ -10,21 +10,20 @@ process concat_tables {
 
     input:
         path(metric_tables)
+        val output_name
 
     output:
-        path("refs.percents.txt"), emit: refs_percent_final_table
+        path("${output_name}.txt"), emit: refs_percent_final_table
 
     script:
 
     def tables_list = []
     tables_list = metric_tables
     listBashTable = tables_list.join(" ");
-    log.info"""
-    $listBashTable
-    """
+
     """
     for i in $listBashTable;do
-        cat \$i >> refs.percents.txt
+        cat \$i >> ${output_name}.txt
     done
     """
 

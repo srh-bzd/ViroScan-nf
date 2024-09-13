@@ -96,7 +96,7 @@ include { bowtie2_index; bowtie2 } from "$baseDir/modules/bowtie2.nf"
 include { breseq } from "$baseDir/modules/breseq.nf"
 include { fastp } from "$baseDir/modules/fastp.nf"
 include { write_output_tables } from "$baseDir/modules/python.nf"
-include { concat_tables } from "$baseDir/modules/bash.nf"
+include { concat_tables as concat_tables1; concat_tables as concat_tables2} from "$baseDir/modules/bash.nf"
 // When using the same process several times like here with  fastqc you must provide a specific name
 // by call using this structure "fastqc as fastqc_raw" where the process fastqc will be available here with the name fastqc_raw
 include { fastqc as fastqc_raw; fastqc as fastqc_ali } from "$baseDir/modules/fastqc.nf"
@@ -227,7 +227,8 @@ workflow ALIGN {
         // ------------------- METRICS -----------------
         write_output_tables(breseq.out.tuple_breseq_sample_json)
         //concat_tables(write_output_tables.out.metric_tables.toList())
-        concat_tables(write_output_tables.out.metric_percents.collect())
+        concat_tables1(write_output_tables.out.metric_percents.collect(), "metric_percent_all")
+        concat_tables2(write_output_tables.out.metric_counts.collect(), "metric_counts_all")
         // breseq.out.tuple_breseq_sample_json.toList().map{[it]}.view()
 
         // ------------------- SAMTOOLS -----------------
