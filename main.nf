@@ -99,7 +99,7 @@ include { bowtie2_index; bowtie2 } from "$baseDir/modules/bowtie2.nf"
 include { breseq } from "$baseDir/modules/breseq.nf"
 include { fastp } from "$baseDir/modules/fastp.nf"
 include { write_output_tables } from "$baseDir/modules/python.nf"
-include { concat_tables as concat_tables1; concat_tables as concat_tables2} from "$baseDir/modules/bash.nf"
+include { concat_tables; concat_canard} from "$baseDir/modules/bash.nf"
 include { fastqc as fastqc_raw; fastqc as fastqc_ali } from "$baseDir/modules/fastqc.nf"
 include { samtools_sam2bam; samtools_sort  } from "$baseDir/modules/samtools.nf"
 
@@ -211,10 +211,15 @@ workflow OUTIN {
         // ------------------- METRICS -----------------
         // create the metrics tables
         write_output_tables(breseq.out.tuple_breseq_sample_json)
-        // concat the metric_percent tables
-        concat_tables1(write_output_tables.out.metric_percents.collect(), "metric_percents_all")
+
+        
+        // Group files by sample 
+        reads.view()
+        tuple_sample_fastq_after_trimming.view()
+        concat_canard(reads, tuple_sample_fastq_after_trimming, bowtie2.out.tuple_sample_fastq_matched, bowtie2.out.tuple_sample_fastq, write_output_tables.out.tuple_sample_metric_counts)
+
         // concat the metric_counts tables
-        concat_tables2(write_output_tables.out.metric_counts.collect(), "metric_counts_all")       
+        concat_tables(concat_canard.out.sample_final_table.collect(), "metric_counts_all")
 }
 
 //*************************************************
