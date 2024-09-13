@@ -185,6 +185,6 @@ No yet, but maybe later !
 
 # Acknowledgement
 
-Jacques Dainat (@Juke34)
+Jacques Dainat (@Juke34)  
 Development based on the BiTeN template (https://github.com/Juke34/BiTeN) made by Dainat J.
 
