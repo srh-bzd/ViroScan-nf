@@ -219,9 +219,11 @@ workflow ALIGN {
 
         // ------------------- BOWTIE2 -----------------
         bowtie2_index(genome) // index
+        // Filter out - we remove the reads that align to the reference genomes
         bowtie2(tuple_sample_fastq_after_trimming, bowtie2_index.out.collect(), genome.collect()) // align
 
         // ------------------- BRESEQ -----------------
+        // Filter in - we align and keep the reads that align to the reference genomes
         breseq(bowtie2.out.tuple_sample_fastq, genome.collect())
 
         // ------------------- METRICS -----------------
