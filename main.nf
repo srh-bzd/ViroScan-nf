@@ -214,9 +214,13 @@ workflow OUTIN {
 
         
         // Group files by sample 
-        reads.view()
-        tuple_sample_fastq_after_trimming.view()
-        concat_canard(reads, tuple_sample_fastq_after_trimming, bowtie2.out.tuple_sample_fastq_matched, bowtie2.out.tuple_sample_fastq, write_output_tables.out.tuple_sample_metric_counts)
+        reads.join(tuple_sample_fastq_after_trimming, by: 0)
+            .join(bowtie2.out.tuple_sample_fastq, by: 0)
+            .join(bowtie2.out.tuple_sample_fastq_matched, by: 0) 
+            .join(write_output_tables.out.tuple_sample_metric_counts, by: 0)
+            .set {concat_all_inputs}
+
+        concat_canard(concat_all_inputs)
 
         // concat the metric_counts tables
         concat_tables(concat_canard.out.sample_final_table.collect(), "metric_counts_all")

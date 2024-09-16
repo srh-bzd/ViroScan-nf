@@ -13,7 +13,7 @@ process concat_tables {
         val output_name
 
     output:
-        path("${output_name}.txt"), emit: refs_percent_final_table
+        path("${output_name}.tsv"), emit: refs_percent_final_table
 
     script:
 
@@ -22,9 +22,9 @@ process concat_tables {
     listBashTable = tables_list.join(" ");
 
     """
-    echo -e "Sample\tREAD_TOTAL\tFILTER_OUT_UNMATCH\tFILTER_OUT_MATCH\tNB_READS_TO_ALIGN\tNB_READS_ALIGNED"  > ${output_name}.txt
+    echo -e "Sample\tREAD_TOT\tREAD_AFTER_TRIM\tFOUT_MATCH\tFOUT_UNMATCH\tFIN_FILTEREDOUT\tFIN_UNMATCH\tFIN_MATCH"  > ${output_name}.tsv
     for i in $listBashTable;do
-        cat \$i >> ${output_name}.txt
+        cat \$i >> ${output_name}.tsv
     done
     """
 
@@ -35,23 +35,12 @@ process concat_canard{
     publishDir "${params.outdir}/metrics", pattern: "*", mode: 'copy' // I want all sub-directories
 
     input:
-        tuple val(sample), path (raw_reads)
-        tuple val(sample), path (trimmed_reads)
-        tuple val(sample), path (unmatched)
-        tuple val(sample), path (matched)
-        tuple val(sample), path (in_counts)
+        tuple val(sample), path (raw_reads) , path (trimmed_reads), path (unmatched), path (matched), path (in_counts)
 
     output:
-        path("${sample}_final_table.txt"), emit: sample_final_table
+        path("${sample}_final_table.tsv"), emit: sample_final_table
 
     script:
-    log.info"""
-        ${sample} ${raw_reads}
-        ${sample} ${trimmed_reads}
-        ${sample} ${unmatched}
-        ${sample} ${matched}
-        ${sample} ${in_counts}
-    """
     """
     # work with raw fastq files input
     nb_read=\$(zcat ${raw_reads} | wc -l)
@@ -68,9 +57,14 @@ process concat_canard{
     FILTER_OUT_MATCH=\$((\$nb_read/4)) 
 
     # Work with table from breseq output
-    NB_READS_TO_ALIGN=\$(awk '{print \$2}'  ${in_counts})
-    NB_READS_ALIGNED=\$(awk '{print \$3}'  ${in_counts})
-    echo -e "$sample\t\$READ_TOTAL\t\$READ_TOTAL_TRIMMED\t\$FILTER_OUT_UNMATCH\t\$FILTER_OUT_MATCH\t\$NB_READS_TO_ALIGN\t\$NB_READS_ALIGNED" >> ${sample}_final_table.txt
+    FIN_MATCH=\$(awk '{print \$3}'  ${in_counts})
+    FIN_UNMATCH=\$(awk '{print \$2}'  ${in_counts})
+    FIN_UNMATCH=\$((\$FIN_UNMATCH - \$FIN_MATCH))
+
+    # NB filtered out by breseq
+    FIN_FILTEREDOUT=\$((\$FILTER_OUT_UNMATCH - \$FIN_UNMATCH ))
+
+    echo -e "$sample\t\$READ_TOTAL\t\$READ_TOTAL_TRIMMED\t\$FILTER_OUT_MATCH\t\$FILTER_OUT_UNMATCH\t\$FIN_FILTEREDOUT\t\$FIN_UNMATCH\t\$FIN_MATCH" >> ${sample}_final_table.tsv
 
     """
 
