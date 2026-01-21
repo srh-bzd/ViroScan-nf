@@ -1,8 +1,7 @@
 # ViroScan-nf  
 
-![Build](https://github.com/srh-bzd/ViroScan-nf/workflows/CI/badge.svg)
 ![Nextflow](https://img.shields.io/badge/Nextflow-%3E%3D22.04.0-brightgreen)
-![Docker Pulls](https://img.shields.io/docker/pulls/username/viroscan-nf)
+![Docker](https://img.shields.io/badge/Docker-supported-blue)
 ![Singularity](https://img.shields.io/badge/Singularity-supported-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -17,11 +16,13 @@ The pipeline combines host read filtering, viral variant calling, and summary me
       * [ViroScan-nf](#viroscan-nf)
       * [Nextflow](#nextflow)
       * [Container platform](#container-platform)
-        * [Docker](#docker)
-        * [Singularity](#singularity)  
    * [Usage](#usage)
    * [Parameters](#parameters)
    * [Outputs](#outputs)
+      * [ViroSc](#viroscan-nf)
+      * [Nextflow](#nextflow)
+      * [Container platform](#container-platform)
+   * [Usage](#usage)
    * [Uninstall](#uninstall)
    * [Contributing](#contributing)
    * [Report bugs and issues](#report-bugs-and-issues)
@@ -35,28 +36,6 @@ ViroScan-nf is an automated pipeline that:
 - Aligns viral reads to a viral reference genome using breseq
 - Identifies viral mutations
 - Computes viral alignment and coverage metrics directly from breseq outputs
-
-**Workflow overview**
-
-```mermaid
----
-title: Workflow of ViroScan-nf
----
-flowchart TD
-    A([Input reads]) --> B[Optional trimming (fastp)]
-    B --> C[Align reads to host genome (Bowtie2)]
-    D[(Host genome index)] -.-> C
-    C --> E([Mapped reads to host])
-    C --> F([Unmapped reads])
-    F --> G[Align to viral genome (breseq)]
-    H[(Viral genome)] -.-> G
-    G --> I([Variant calls])
-    G --> J([Viral alignment metrics])
-    subgraph Output
-        I
-        J
-    end
-```
 
 ## Installation
 
@@ -134,9 +113,7 @@ Available profiles:
 - `local`
 - `ifb`
 
-**Test the workflow**
-
-Test data are provided in the test/ directory.
+Test the workflow:
 ```bash
 nextflow run main.nf -profile local,docker,test 
 ```
@@ -144,6 +121,7 @@ nextflow run main.nf -profile local,docker,test
 ## Parameters
 
 **Mandatory parameters**
+
 | Parameter        | Description                            |
 | ---------------- | -------------------------------------- |
 | `--reads`        | Input reads (supports `*R{1,2}.fq.gz`) |
@@ -164,7 +142,7 @@ nextflow run main.nf -profile local,docker,test
 | `--table_threshold`   | 5       | Minimum % viral alignment to report                 |
 | `--help`              | false   | Display help message                                |
 
-**Outputs**
+## Outputs
 
 The main results are written to the directory specified by `--outdir`.
 
