@@ -177,13 +177,4 @@ workflow {
  */
 workflow.onComplete {
     log.info ( workflow.success ? "\n✓ Pipeline completed successfully!\n✓ Results available in: ${params.outdir}\n" : "\n✗ Pipeline failed. Check logs and intermediate files for details.\n" )
-    
-    // Print execution summary
-    log.info "========================================="
-    log.info "Pipeline execution summary:"
-    log.info "  Duration    : ${workflow.duration}"
-    log.info "  Success     : ${workflow.success}"
-    log.info "  Exit status : ${workflow.exitStatus}"
-    log.info "  Error report: ${workflow.errorReport}"
-    log.info "========================================="
 }

@@ -1,63 +1,71 @@
-<h2>ViroScan</h2>  
+# ViroScan-nf  
 
-ViroScan is an automated pipeline that eliminate short-reads not of interest according to a reference (filter-out) and identify viruses present (filter-in).
+![Build](https://github.com/srh-bzd/ViroScan-nf/workflows/CI/badge.svg)
+![Nextflow](https://img.shields.io/badge/Nextflow-%3E%3D22.04.0-brightgreen)
+![Docker Pulls](https://img.shields.io/docker/pulls/username/viroscan-nf)
+![Singularity](https://img.shields.io/badge/Singularity-supported-blue)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+**ViroScan-nf** is a Nextflow pipeline designed to separate host and viral reads from sequencing data, identify viral mutations, and compute viral alignment and coverage metrics.
+
+The pipeline combines host read filtering, viral variant calling, and summary metric generation in a fully reproducible workflow.
 
 ## Table of Contents
 
    * [Foreword](#foreword)
    * [Installation](#installation)
-      * [ViroScan](#viroscan)
+      * [ViroScan-nf](#viroscan-nf)
       * [Nextflow](#nextflow)
       * [Container platform](#container-platform)
         * [Docker](#docker)
         * [Singularity](#singularity)  
-   * [Usage and test](#usage)
+   * [Usage](#usage)
    * [Parameters](#parameters)
+   * [Outputs](#outputs)
    * [Uninstall](#uninstall)
    * [Contributing](#contributing)
    * [Report bugs and issues](#report-bugs-and-issues)
-   * [How to cite?](#how-to-cite)
    * [Acknowledgement](#acknowledgement)
 
 ## Foreword
 
-ViroScan is an automated pipeline that eliminate reads not of interest according to a reference (filter-out) and identify viruses present (filter-in).
+ViroScan-nf is an automated pipeline that:
+- Filters out host reads by aligning sequencing reads against a host reference genome using Bowtie2
+- Retains unmapped reads and uses them as candidate viral reads
+- Aligns viral reads to a viral reference genome using breseq
+- Identifies viral mutations
+- Computes viral alignment and coverage metrics directly from breseq outputs
 
+**Workflow overview**
 
 ```mermaid
 ---
-title: Workflow of ViroScan
+title: Workflow of ViroScan-nf
 ---
 flowchart TD
-    A([Input reads to analyse]) --> B{Perform a \nfilter out ?};
-    B -- No --> F{Perform a \nfilter in};
-    B -- Yes --> C[Align against reference];
-    D([Indexed reference]) -.-> C;
-    C --> K([Mapped reads]);
-    C --> E([Unmapped reads]);
-    E --> F;
-    F --> G[Align against viruses];
-    H[(Database \nof viruses)] -.-> G;
-    G --> I([Mapped reads\n]);
-    G --> L([Metrics]);
-    G --> M([Tool analysis results]);
-    subgraph identifier["\n\n\nOutput"]
-    I;
-    L;
-    M; 
+    A([Input reads]) --> B[Optional trimming (fastp)]
+    B --> C[Align reads to host genome (Bowtie2)]
+    D[(Host genome index)] -.-> C
+    C --> E([Mapped reads to host])
+    C --> F([Unmapped reads])
+    F --> G[Align to viral genome (breseq)]
+    H[(Viral genome)] -.-> G
+    G --> I([Variant calls])
+    G --> J([Viral alignment metrics])
+    subgraph Output
+        I
+        J
     end
 ```
 
-
 ## Installation
 
-The prerequisites to run the pipeline are:  
-
-  * The ViroScan repository
-  * [Nextflow](https://www.nextflow.io/)  >= 22.04.0
+**Requirements**
+  * [Nextflow](https://www.nextflow.io/) ≥ 22.04.0
   * [Docker](https://www.docker.com) or [Singularity](https://sylabs.io/singularity/) 
+  * [Java](https://www.java.com/en/) ≥ 11
 
-### ViroScan 
+### ViroScan-nf
 
 ```bash
 # clone the workflow repository
@@ -69,123 +77,166 @@ cd ViroScan-nf
 
 ### Nextflow 
 
-  * Via conda 
+  * Using conda 
 
-    <details>
-      <summary>See here</summary>
-      ```
+      ```bash
       conda create -n nextflow
       conda activate nextflow
       conda install nextflow
-      ```  
-    </details>
-
-  * Manually
-    <details>
-      <summary>See here</summary>
-       Nextflow runs on most POSIX systems (Linux, macOS, etc) and can typically be installed by running these commands:
-
       ```
+
+  * Manual installation
+
+      ```bash
       # Make sure 11 or later is installed on your computer by using the command:
       java -version
-
+      
       # Install Nextflow by entering this command in your terminal(it creates a file nextflow in the current dir):
       curl -s https://get.nextflow.io | bash 
-
+      
       # Add Nextflow binary to your user's PATH:
       mv nextflow ~/bin/
       # OR system-wide installation:
       # sudo mv nextflow /usr/local/bin
       ```
-    </details>
 
 ### Container platform
 
-To run the workflow you will need a container platform: docker or singularity.
-
-### Docker
-
-Please follow the instructions at the [Docker website](https://docs.docker.com/desktop/)
-
-### Singularity
-
-Please follow the instructions at the [Singularity website](https://docs.sylabs.io/guides/latest/admin-guide/installation.html)
+You must use Docker or Singularity.
+- Docker: https://docs.docker.com/desktop/
+- Singularity: https://docs.sylabs.io/guides/latest/admin-guide/installation.html
 
 ## Usage
 
-You can first check the available options and parameters by running:
-`nextflow run main.nf --help`
-
-To run the workflow you must select a profile according to the container platform you want to use:   
-- `singularity`, a profile using Singularity to run the containers
-- `docker`, a profile using Docker to run the containers
-
-The command will look like that: 
-```
-nextflow run main.nf -profile docker <rest of paramaters>
-```
-Another profile is available (/!\\Work in progress):
-
-- `slurm`, to add if your system has a slurm executor (local by default) 
-
-The use of the `slurm` profile  will give a command like this one: 
-```
-nextflow run main.nf -profile docker,slurm <rest of paramaters>
+Display available options:
+```bash
+nextflow run main.nf --help
 ```
 
-## Test the workflow
+Before running the workflow, make sure that the Python script used for generating viral metrics is executable:
 
-Test data are included in the ViroScan repository in the `test` folder.
-
-A typical command to run a test on single end data will look like that:
-
-```
-nextflow run -profile local,docker,test main.nf
+```bash
+chmod +x bin/write_viral_table.py
 ```
 
-On success you should get a message looking like this:
+Run the pipeline using Docker:
+```bash
+nextflow run main.nf \
+    -profile docker,local \
+    --reads 'data/*R{1,2}.fq.gz' \
+    --host_genome host.fasta \
+    --viral_genome virus.gbk
 ```
-  Viroscan Pipeline execution summary
-    --------------------------------------
-    Completed at : 2024-03-07T21:40:23.180547+01:00
-    UUID         : e2a131e3-3652-4c90-b3ad-78f758c06070
-    Duration     : 8.4s
-    Success      : true
-    Exit Status  : 0
-    Error report : -
+
+Available profiles:
+- `docker`
+- `singularity`
+- `local`
+- `ifb`
+
+**Test the workflow**
+
+Test data are provided in the test/ directory.
+```bash
+nextflow run main.nf -profile local,docker,test 
 ```
 
 ## Parameters
 
-| Parameter | Comment |
-| --- | --- |
-| --help            | prints the help section |
-| --reads           | path to the directory containing the reads |
-| --pattern_reads   | pattern to match the read files. In the case of single end data it would looks like: "*.fastq.gz". In the case of paired end data it would looks like: "*_{R1,R2}_001.fastq.gz" or "*_{1,2}.fastq.gz" |
-| --single_end      | Boolean to inform if we have a single end or paired end data. |
-| --stranded        | Boolean to inform if we have a single or stranded data. |
-| --genome_in       | Path to the genome file in fasta format or genebank used for filter-in with breseq
-| --genome_out      | Path to the genome file in fasta format used for filter-out with bowtie2
-| --bowtie2_options | Parameter to tune the bowtie2 aligner behaviour. |
+**Mandatory parameters**
+| Parameter        | Description                            |
+| ---------------- | -------------------------------------- |
+| `--reads`        | Input reads (supports `*R{1,2}.fq.gz`) |
+| `--host_genome`  | Host reference genome (FASTA)          |
+| `--viral_genome` | Viral genome (FASTA or GenBank)        |
+| `--outdir`       | Output directory                       |
+
+**Optional parameters**
+
+| Parameter             | Default | Description                                         |
+| --------------------- | ------- | --------------------------------------------------- |
+| `--paired_end`        | true    | Paired-end or single-end reads                      |
+| `--host_genome_index` | null    | Prefix of an existing Bowtie2 index (skip indexing) |
+| `--run_fastp`         | true    | Enable read trimming                                |
+| `--fastp_options`     | ""      | Additional fastp options                            |
+| `--bowtie2_options`   | ""      | Additional Bowtie2 options                          |
+| `--breseq_options`    | ""      | Additional breseq options                           |
+| `--table_threshold`   | 5       | Minimum % viral alignment to report                 |
+| `--help`              | false   | Display help message                                |
+
+**Outputs**
+
+The main results are written to the directory specified by `--outdir`.
+
+```bash
+results/
+├── 01.cleaned_reads
+│   ├── log
+│   │   └── sample_name_fastp.json
+│   ├── sample_name_R1.fastq.gz
+│   └── sample_name_R2.fastq.gz
+├── 02.indexed_ref
+├── 03.aligned_reads
+│   ├── host
+│   │   ├── bam
+│   │   │   └── sample_name.bam
+│   │   ├── sample_name_matched.fq.gz
+│   │   ├── sample_name_matched_R1.fq.gz
+│   │   └── sample_name_matched_R2.fq.gz
+│   └── log
+│       └── sample_name_bowtie2.log
+├── 04.unmapped_reads
+│   ├── host
+│   │   ├── sample_name_unmatched.fq.gz
+│   │   ├── sample_name_unmatched_R1.fq.gz
+│   │   └── sample_name_unmatched_R2.fq.gz
+│   └── viral
+│       ├── sample_name_unmatched.fq.unmatched.fastq
+│       ├── sample_name_unmatched_R1.fq.unmatched.fastq
+│       └── sample_name_unmatched_R2.fq.unmatched.fastq
+├── 05.called_variants
+│   └── sample_name
+│       ├── data
+│       └── output
+└── reports
+    ├── multiqc_report.html
+    └── viral_alignment_metrics.txt
+```
+
+**Viral metrics table**
+
+Generated from `breseq summary.json`.
+| Column                    | Description                                                  |
+| ------------------------- | ------------------------------------------------------------ |
+| **Sample_ID**             | Name of the sample being analyzed                            |
+| **Viral_genome**          | Viral reference genome ID used for alignment                 |
+| **Num_reads**             | Total number of input sequencing reads                       |
+| **Num_reads_aligned**     | Number of reads that aligned to the viral genome             |
+| **Percent_reads_aligned** | Percentage of reads aligned to the virus                     |
+| **Avg_coverage**          | Average sequencing coverage across the viral genome          |
+| **Percent_coverage**      | Approximate percentage of the genome covered by reads        |
+| **Num_bases_mapped**      | Total number of bases mapped to the viral genome             |
+| **Num_genes**             | Number of viral genes detected                               |
+| **Num_features**          | Number of genomic features detected                          |
+| **Coverage_variance**     | Variability of coverage along the viral genome               |
+
 
 ## Uninstall
 
-To be completed
+No installation is required.
+To uninstall, simply delete the repository directory.
 
 ## Contributing
 
-We welcome contributions from the community! See our [Contributing guidelines](https://github.com/srh-bzd/ViroScan-nf/blob/main/CONTRIBUTING.md)
+Contributions are welcome. 
+See [Contributing guidelines](https://github.com/srh-bzd/ViroScan-nf/blob/main/CONTRIBUTING.md)
 
 ## Report bugs and issues
 
-Found a bug or have a question? Please open an [issue](https://github.com/srh-bzd/ViroScan-nf/issues).
+Please open an issue on GitHub:
+https://github.com/srh-bzd/ViroScan-nf/issues
 
-## How to cite?
-
-No yet, but maybe later !
-
-# Acknowledgement
+## Acknowledgement
 
 Jacques Dainat (@Juke34)  
-Development based on the BiTeN template (https://github.com/Juke34/BiTeN) made by Dainat J.
-
+Based on the **BiTeN template**: https://github.com/Juke34/BiTeN

@@ -8,6 +8,7 @@ import sys
 """
 USAGE
     ./write_viral_table.py <sample> <json_file> <output_file> <threshold>
+
 DESCRIPTION
     Calculate metrics from breseq summary.json.
 """
@@ -29,7 +30,11 @@ def parse_json_file(json_file, threshold):
         avg_coverage = round(ref_info.get("coverage_average", 0), 1)
         genome_length = ref_info.get("length", 0)
         num_bases_mapped = ref_info.get("num_bases_mapped_to_reference", 0)
-        percent_genome_covered = round((num_bases_mapped / (genome_length * avg_coverage)) * 100, 1) if genome_length else 0
+        if genome_length > 0 and avg_coverage > 0:
+            percent_genome_covered = round((num_bases_mapped / (genome_length * avg_coverage)) * 100, 1)
+        else:
+            percent_genome_covered = 0
+
 
         if percent_reads_mapped >= threshold:
             results.append({
