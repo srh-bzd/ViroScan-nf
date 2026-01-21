@@ -13,9 +13,6 @@ The pipeline combines host read filtering, viral variant calling, and summary me
 
    * [Foreword](#foreword)
    * [Installation](#installation)
-      * [ViroScan-nf](#viroscan-nf)
-      * [Nextflow](#nextflow)
-      * [Container platform](#container-platform)
    * [Usage](#usage)
    * [Parameters](#parameters)
    * [Outputs](#outputs)
