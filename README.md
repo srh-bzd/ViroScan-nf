@@ -19,9 +19,6 @@ The pipeline combines host read filtering, viral variant calling, and summary me
    * [Usage](#usage)
    * [Parameters](#parameters)
    * [Outputs](#outputs)
-      * [ViroSc](#viroscan-nf)
-      * [Nextflow](#nextflow)
-      * [Container platform](#container-platform)
    * [Usage](#usage)
    * [Uninstall](#uninstall)
    * [Contributing](#contributing)
@@ -44,7 +41,7 @@ ViroScan-nf is an automated pipeline that:
   * [Docker](https://www.docker.com) or [Singularity](https://sylabs.io/singularity/) 
   * [Java](https://www.java.com/en/) ≥ 11
 
-### ViroScan-nf
+**ViroScan-nf**
 
 ```bash
 # clone the workflow repository
@@ -54,7 +51,7 @@ git clone https://github.com/srh-bzd/ViroScan-nf.git
 cd ViroScan-nf
 ```
 
-### Nextflow 
+**Nextflow** 
 
   * Using conda 
 
@@ -79,7 +76,7 @@ cd ViroScan-nf
       # sudo mv nextflow /usr/local/bin
       ```
 
-### Container platform
+**Container platform**
 
 You must use Docker or Singularity.
 - Docker: https://docs.docker.com/desktop/
