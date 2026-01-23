@@ -35,78 +35,83 @@ ViroScan-nf is an automated pipeline that:
 
 ```mermaid
 flowchart TB
+%% --- Styles ---
+classDef input fill:#FFE4B5,stroke:#CC6600,stroke-width:2px,color:#663300,font-weight:bold;
+classDef preprocessing fill:#B6ECE2,stroke:#065647,stroke-width:2px,color:#065647,font-weight:bold;
+classDef host fill:#FFD580,stroke:#CC6600,stroke-width:2px,color:#663300,font-weight:bold;
+classDef viral fill:#FFB6C1,stroke:#CC3366,stroke-width:2px,color:#660033,font-weight:bold;
+classDef report fill:#D3D3D3,stroke:#555,stroke-width:2px,color:#000,font-weight:bold;
+classDef decision fill:#FFFACD,stroke:#FFA500,stroke-width:2px,stroke-dasharray: 5 5,color:#663300,font-weight:bold;
 
-    %% --- Styles ---
-    classDef input fill:#FFE4B5,stroke:#CC6600,stroke-width:2px,color:#663300,font-weight:bold;
-    classDef preprocessing fill:#B6ECE2,stroke:#065647,stroke-width:2px,color:#065647,font-weight:bold;
-    classDef host fill:#FFD580,stroke:#CC6600,stroke-width:2px,color:#663300,font-weight:bold;
-    classDef viral fill:#FFB6C1,stroke:#CC3366,stroke-width:2px,color:#660033,font-weight:bold;
-    classDef report fill:#D3D3D3,stroke:#555,stroke-width:2px,color:#000,font-weight:bold;
-    classDef decision fill:#FFFACD,stroke:#FFA500,stroke-width:2px,stroke-dasharray: 5 5,color:#663300,font-weight:bold;
-
-    %% --- Inputs ---
+%% --- Inputs subgraph ---
+subgraph Inputs
     reads_ch["Input reads"]:::input
-    host_genome_ch["Host genome"]:::input
-    host_genome_index_ch["Host genome index (optional)"]:::input
     viral_genome_ch["Viral genome"]:::input
-
-    %% --- Preprocessing (optional Fastp) ---
-    reads_ch --> cond_fastp
-    subgraph Preprocessing
-        cond_fastp{"Trim reads ?"}:::decision
-        FP["TRIMMING (Fastp)"]:::preprocessing
-        trimmed_reads_ch["Trimmed reads"]:::preprocessing
-        cond_fastp -->|Yes| FP
-        FP --> trimmed_reads_ch
-        cond_fastp -->|No| trimmed_reads_ch
+    subgraph Host_Input["Host Input (choose one)"]
+        host_genome_ch["Host genome"]:::input
+        host_genome_index_ch["Host genome index"]:::input
     end
+end
 
-    %% --- Host filtering ---
-    host_genome_ch --> cond_index
-    host_genome_index_ch --> cond_index
-    subgraph Host_Filtering
-        cond_index{"User provides host index ?"}:::decision
+%% --- Preprocessing (optional Fastp) ---
+reads_ch --> cond_fastp
+subgraph Preprocessing
+    cond_fastp{"Trim reads ?"}:::decision
+    FP["TRIMMING (Fastp)"]:::preprocessing
+    trimmed_reads_ch["Trimmed reads"]:::preprocessing
+    cond_fastp -->|Yes| FP
+    FP --> trimmed_reads_ch
+    cond_fastp -->|No| trimmed_reads_ch
+end
 
-        BT2_INDEX["INDEXING (Bowtie2)"]:::host
-        BT2_ALIGN["MAPPING (Bowtie2)"]:::host
-        BT2_ALIGN_mapped["Mapped reads"]:::host
-        BT2_ALIGN_unmapped["Unmapped reads"]:::host
+%% --- Host filtering ---
+host_genome_ch --> cond_index
+host_genome_index_ch --> cond_index
+subgraph Host_Filtering
+    cond_index{"User provides host index ?"}:::decision
+    BT2_INDEX["INDEXING (Bowtie2)"]:::host
+    BT2_ALIGN["MAPPING (Bowtie2)"]:::host
+    BT2_ALIGN_mapped["Mapped reads"]:::host
+    BT2_ALIGN_unmapped["Unmapped reads"]:::host
+    
+    cond_index -->|Yes| BT2_ALIGN
+    cond_index -->|No| BT2_INDEX
+    BT2_INDEX --> BT2_ALIGN
+    BT2_ALIGN --> BT2_ALIGN_mapped
+    BT2_ALIGN --> BT2_ALIGN_unmapped
+end
 
-        %% Flow
-        trimmed_reads_ch --> BT2_ALIGN
-        cond_index -->|Yes| BT2_ALIGN
-        cond_index -->|No| BT2_INDEX
-        BT2_INDEX --> BT2_ALIGN
-        BT2_ALIGN --> BT2_ALIGN_mapped
-        BT2_ALIGN --> BT2_ALIGN_unmapped
-    end
+trimmed_reads_ch --> BT2_ALIGN
 
-    %% --- Viral analysis ---
-    viral_genome_ch --> BRESEQ
-    subgraph Viral_Analysis
-        BRESEQ["VARIANT CALLING (Breseq)"]:::viral
-        BT2_ALIGN_unmapped --> BRESEQ
-        VM["VIRAL METRICS CALCULATION"]:::viral
-        BRESEQ --> VM
-    end
+%% --- Viral analysis ---
+viral_genome_ch --> BRESEQ
+subgraph Viral_Analysis
+    BRESEQ["VARIANT CALLING (Breseq)"]:::viral
+    VM["VIRAL METRICS CALCULATION"]:::viral
+    BRESEQ --> VM
+end
 
-    %% --- QC and reporting ---
-    subgraph Reporting
-        fastp_reports_ch["Trimming reports"]:::report
-        reports_ch["Mapping reports"]:::report
-        MULTIQC["AGGREGATE (MultiQC)"]:::report
+BT2_ALIGN_unmapped --> BRESEQ
 
-        FP --> fastp_reports_ch
-        BT2_ALIGN --> reports_ch
-        fastp_reports_ch --> MULTIQC
-        reports_ch --> MULTIQC
-    end
+%% --- QC and reporting ---
+subgraph Reporting
+    fastp_reports_ch["Trimming reports"]:::report
+    reports_ch["Mapping reports"]:::report
+    MULTIQC["AGGREGATE (MultiQC)"]:::report
+    FP --> fastp_reports_ch
+    BT2_ALIGN --> reports_ch
+    fastp_reports_ch --> MULTIQC
+    reports_ch --> MULTIQC
+end
+
+%% --- Final outputs subgraph ---
+subgraph Outputs
     multiqc_report_ch["Single HTML report"]:::report
-    MULTIQC --> multiqc_report_ch
-
-    %% --- Final comprehensive viral report ---
     CV["Comprehensive Viral Report"]:::report
-    VM --> CV
+end
+
+MULTIQC --> multiqc_report_ch
+VM --> CV
 ```
 
 ## Installation
