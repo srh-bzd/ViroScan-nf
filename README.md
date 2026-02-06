@@ -1,6 +1,6 @@
 # ViroScan-nf  
 
-![CI](https://github.com/srh-bzd/ViroScan-nf/actions/workflows/main.yml/badge.svg)
+![CI](https://github.com/srh-bzd/ViroScan-nf/actions/workflows/ci.yml/badge.svg)
 ![Nextflow](https://img.shields.io/badge/Nextflow-%3E%3D22.04.0-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-supported-blue)
 ![Singularity](https://img.shields.io/badge/Singularity-supported-blue)
