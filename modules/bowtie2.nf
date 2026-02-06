@@ -28,7 +28,7 @@ process BOWTIE2_ALIGN {
     label 'bowtie2'
     tag "Aligning $sample_id on $genome_prefix"
 
-    publishDir "$params.outdir/03.aligned_reads/log", mode: 'copy', pattern: "*.log"
+    publishDir "$params.outdir/03.aligned_reads/host/log", mode: 'copy', pattern: "*.log"
     publishDir "$params.outdir/03.aligned_reads/host", mode: 'copy', pattern: "${sample_id}_matched*fq.gz"
     publishDir "$params.outdir/04.unmapped_reads/host", mode: 'copy', pattern: "${sample_id}_unmatched*fq.gz"
 

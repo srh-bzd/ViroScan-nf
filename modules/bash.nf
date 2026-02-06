@@ -3,7 +3,7 @@
  */
 
 process CONCAT_VIRAL_METRICS_TABLES { 
-    publishDir "$params.outdir/reports", mode: 'copy'
+    publishDir "$params.outdir/05.called_variants", mode: 'copy'
 
     input:
     path txt_files

@@ -6,11 +6,11 @@ nextflow.enable.dsl=2
  * Pipeline input parameters
  */
 // Input / output params
-params.reads = "$baseDir/test/*R{1,2}.f*q*"
-params.host_genome = "$baseDir/test/hpv16.fasta"
+params.reads = "/path/to/reads_R{1,2}.f*q*"
+params.host_genome = "/path/to/host.fasta"
 params.host_genome_index = null
-params.viral_genome = "$baseDir/test/hpv6-11.gbk"
-params.outdir = "$baseDir/results"
+params.viral_genome = "/path/to/virus.gbk"
+params.outdir = "results"
 
 // Read feature params
 params.paired_end = true
@@ -61,8 +61,8 @@ def helpMSG() {
         nextflow run main.nf \\
             -profile docker,local \\
             --reads test/'*R{1,2}.fq.gz' \\
-            --host_genome test/hpv16.fasta \\
-            --viral_genome test/hpv6-11.gbk
+            --host_genome test/host.fasta \\
+            --viral_genome test/virus.gbk
 
     Mandatory options:
         --reads                     Reads to analyse       
@@ -176,5 +176,27 @@ workflow {
  * Workflow completion handlers
  */
 workflow.onComplete {
-    log.info ( workflow.success ? "\n✓ Pipeline completed successfully!\n✓ Results available in: ${params.outdir}\n" : "\n✗ Pipeline failed. Check logs and intermediate files for details.\n" )
+    c_reset = "\033[0m";
+    c_green = "\033[0;32m";
+    c_yellow = "\033[0;33m";
+    c_red = "\033[0;31m";
+
+    if (workflow.success) {
+        log.info "\n${c_green}ViroScan pipeline complete!${c_reset}"
+    } else {
+        log.error "${c_red}Oops .. something went wrong${c_reset}"
+    }
+
+    log.info "${c_yellow}The results are available in the ‘${params.outdir}’ directory.${c_reset}"
+    log.info """
+    ViroScan Pipeline execution summary
+    --------------------------------------
+    Completed at : ${workflow.complete}
+    UUID         : ${workflow.sessionId}
+    Duration     : ${workflow.duration}
+    Success      : ${workflow.success}
+    Exit Status  : ${workflow.exitStatus}
+    Error report : ${workflow.errorReport ?: '-'}
+    """
+    .stripIndent(true)
 }

@@ -1,5 +1,6 @@
 # ViroScan-nf  
 
+![CI](https://github.com/srh-bzd/ViroScan-nf/actions/workflows/main.yml/badge.svg)
 ![Nextflow](https://img.shields.io/badge/Nextflow-%3E%3D22.04.0-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-supported-blue)
 ![Singularity](https://img.shields.io/badge/Singularity-supported-blue)
@@ -16,7 +17,6 @@ The pipeline combines host read filtering, viral variant calling, and summary me
    * [Usage](#usage)
    * [Parameters](#parameters)
    * [Outputs](#outputs)
-   * [Usage](#usage)
    * [Uninstall](#uninstall)
    * [Contributing](#contributing)
    * [Report bugs and issues](#report-bugs-and-issues)
@@ -127,11 +127,13 @@ VM --> CV
 # clone the workflow repository
 git clone https://github.com/srh-bzd/ViroScan-nf.git
 
-# Move in it
+# cd into the repository
 cd ViroScan-nf
 ```
 
 **Nextflow** 
+
+You can install Nextflow either via conda (recommended) or manually.
 
   * Using conda 
 
@@ -184,16 +186,17 @@ nextflow run main.nf \
     --viral_genome virus.gbk
 ```
 
+Run the pipeline on the test dataset:
+```bash
+nextflow run main.nf \
+    -profile docker,local,test
+```
+
 Available profiles:
 - `docker`
 - `singularity`
 - `local`
 - `ifb`
-
-Test the workflow:
-```bash
-nextflow run main.nf -profile local,docker,test 
-```
 
 ## Parameters
 
@@ -201,7 +204,7 @@ nextflow run main.nf -profile local,docker,test
 
 | Parameter        | Description                            |
 | ---------------- | -------------------------------------- |
-| `--reads`        | Input reads (supports `*R{1,2}.fq.gz`) |
+| `--reads`        | Input reads                            |
 | `--host_genome`  | Host reference genome (FASTA)          |
 | `--viral_genome` | Viral genome (FASTA or GenBank)        |
 | `--outdir`       | Output directory                       |
@@ -216,7 +219,7 @@ nextflow run main.nf -profile local,docker,test
 | `--fastp_options`     | ""      | Additional fastp options                            |
 | `--bowtie2_options`   | ""      | Additional Bowtie2 options                          |
 | `--breseq_options`    | ""      | Additional breseq options                           |
-| `--table_threshold`   | 5       | Minimum % viral alignment to report                 |
+| `--table_threshold`   | 5       | Minimum percentage of reads aligned to the viral genome required to include the sample in the viral metrics table|
 | `--help`              | false   | Display help message                                |
 
 ## Outputs
@@ -226,41 +229,54 @@ The main results are written to the directory specified by `--outdir`.
 ```bash
 results/
 ├── 01.cleaned_reads
-│   ├── log
-│   │   └── sample_name_fastp.json
-│   ├── sample_name_R1.fastq.gz
-│   └── sample_name_R2.fastq.gz
+│   ├── log
+│   │   └── sample_fastp.html
+│   └── sample_R*.fastq.gz
 ├── 02.indexed_ref
+│   ├── host.*.bt2
+│   └── host.rev.*.bt2
 ├── 03.aligned_reads
-│   ├── host
-│   │   ├── bam
-│   │   │   └── sample_name.bam
-│   │   ├── sample_name_matched.fq.gz
-│   │   ├── sample_name_matched_R1.fq.gz
-│   │   └── sample_name_matched_R2.fq.gz
-│   └── log
-│       └── sample_name_bowtie2.log
+│   ├── host
+│   │   ├── log
+│   │   │   └── sample_bowtie2.log
+│   │   ├── sample.bam
+│   │   ├── sample_matched.fq.gz
+│   │   └── sample_matched_R*.fq.gz
+│   └── viral
+│       ├── sample.bam
+│       └── sample.bam.bai
 ├── 04.unmapped_reads
-│   ├── host
-│   │   ├── sample_name_unmatched.fq.gz
-│   │   ├── sample_name_unmatched_R1.fq.gz
-│   │   └── sample_name_unmatched_R2.fq.gz
-│   └── viral
-│       ├── sample_name_unmatched.fq.unmatched.fastq
-│       ├── sample_name_unmatched_R1.fq.unmatched.fastq
-│       └── sample_name_unmatched_R2.fq.unmatched.fastq
+│   ├── host
+│   │   ├── sample_unmatched.fq.gz
+│   │   └── sample_unmatched_R*.fq.gz
+│   └── viral
+│       ├── sample_R*.unmatched.fastq
+│       └── sample.unmatched.fastq
 ├── 05.called_variants
-│   └── sample_name
-│       ├── data
-│       └── output
-└── reports
-    ├── multiqc_report.html
-    └── viral_alignment_metrics.txt
+│   ├── sample
+│   │   └── output
+│   │       ├── calibration
+│   │       ├── evidence
+│   │       ├── index.html
+│   │       ├── log.txt
+│   │       ├── marginal.html
+│   │       ├── output.done
+│   │       ├── output.gd
+│   │       ├── output.vcf
+│   │       ├── summary.html
+│   │       └── summary.json
+│   └── viral_alignment_metrics.txt
+└── multiqc_report.html
 ```
 
 **Viral metrics table**
 
-Generated from `breseq summary.json`.
+Generated from `breseq summary.json`. Example: 
+| Sample_ID | Viral_genome | Num_reads | Num_reads_aligned | Percent_reads_aligned | Avg_coverage | Percent_coverage | Num_bases_mapped | Num_genes | Num_features | Coverage_variance |
+|-----------|--------------|-----------|-----------------|--------------------|--------------|----------------|-----------------|-----------|--------------|-----------------|
+| sample    | OR669303     | 8984      | 8740            | 97.3               | 165          | 100             | 1309237         | 8         | 10           | 660.3331        |
+
+
 | Column                    | Description                                                  |
 | ------------------------- | ------------------------------------------------------------ |
 | **Sample_ID**             | Name of the sample being analyzed                            |

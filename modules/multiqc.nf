@@ -5,7 +5,7 @@
 
 process MULTIQC {
     label 'multiqc' 
-    publishDir "$params.outdir/reports", mode: 'copy'
+    publishDir "$params.outdir", mode: 'copy'
 
     input:
     path '*'

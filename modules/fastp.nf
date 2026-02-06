@@ -8,7 +8,7 @@ process FASTP_TRIMMING {
     tag "Trimming ${sample_id}"
 
     publishDir "${params.outdir}/01.cleaned_reads", mode: 'copy', pattern: "*.fastq.gz"
-    publishDir "${params.outdir}/01.cleaned_reads/log", mode: 'copy', pattern: "*.json"
+    publishDir "${params.outdir}/01.cleaned_reads/log", mode: 'copy', pattern: "*_fastp.html"
 
     input:
     tuple val(sample_id), path(reads)
@@ -16,6 +16,7 @@ process FASTP_TRIMMING {
     output:
     tuple val(sample_id), path("${sample_id}*.fastq.gz"), emit: trimmed_reads
     path "${sample_id}_fastp.json", emit: fastp_report
+    path "${sample_id}_fastp.html", emit: fastp_html
 
     script:
     if (params.paired_end) {
@@ -27,6 +28,7 @@ process FASTP_TRIMMING {
             -O ${sample_id}_R2.fastq.gz \\
             -w ${task.cpus} \\
             -j ${sample_id}_fastp.json \\
+            -h ${sample_id}_fastp.html \\
             ${params.fastp_options}
         """
     } else {
@@ -36,6 +38,7 @@ process FASTP_TRIMMING {
             -o ${sample_id}.fastq.gz \\
             -w ${task.cpus} \\
             -j ${sample_id}_fastp.json \\
+            -h ${sample_id}_fastp.html \\
             ${params.fastp_options}
         """
     }
