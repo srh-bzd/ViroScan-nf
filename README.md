@@ -1,10 +1,10 @@
 # ViroScan-nf  
 
-![CI](https://github.com/srh-bzd/ViroScan-nf/actions/workflows/ci.yml/badge.svg)
 ![Nextflow](https://img.shields.io/badge/Nextflow-%3E%3D22.04.0-brightgreen)
 ![Docker](https://img.shields.io/badge/Docker-supported-blue)
 ![Singularity](https://img.shields.io/badge/Singularity-supported-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![CI](https://github.com/srh-bzd/ViroScan-nf/actions/workflows/ci.yml/badge.svg)
 
 **ViroScan-nf** is a Nextflow pipeline designed to separate host and viral reads from sequencing data, identify viral mutations, and compute viral alignment and coverage metrics.
 
